@@ -21,7 +21,7 @@ TESTS_TMP_DIR = os.path.join(TESTS_BASE_DIR, "tmp/")
 
 @pytest.fixture
 def setup_csv_file():
-    print("TEST_TMP_DIR:", TESTS_TMP_DIR);
+    print("TEST_TMP_DIR:", TESTS_TMP_DIR)
     csv_path = f"{TESTS_DATA_DIR}transactions_{date_str}.csv"
     data = {
         "key": ["a", "b", "c", "d"],
