@@ -19,7 +19,9 @@ TESTS_TMP_DIR = os.path.join(TESTS_BASE_DIR, "tmp/")
 
 @pytest.fixture
 def setup_csv_files():
-    # Create temporary CSV files for testing
+    """
+    Create temporary CSV files for testing
+    """
     passenger_data = {
         "id": [1, 2, 3],
         "date_registered": ["2021-01-01 00:00:00", "2020-12-31 23:59:59", "2021-01-02 00:00:00"],
@@ -45,6 +47,9 @@ def setup_csv_files():
 
 @patch("airflow.providers.sqlite.hooks.sqlite.SqliteHook.get_conn")
 def test_ingest_csv_as_table(mock_sqlite_conn, setup_csv_files):
+    """
+    Test the ingest_csv_as_table task
+    """
     passenger_csv_path, booking_csv_path = setup_csv_files
 
     # Mock SQLite connection
@@ -73,6 +78,9 @@ def test_ingest_csv_as_table(mock_sqlite_conn, setup_csv_files):
 
 @patch("airflow.providers.sqlite.hooks.sqlite.SqliteHook.get_conn")
 def test_calculate_total_new_bookings_by_country(mock_sqlite_conn):
+    """
+    Test the calculate_total_new_bookings_by_country task
+    """
     # Mock SQLite connection and query results
     mock_conn = MagicMock()
     mock_sqlite_conn.return_value = mock_conn
@@ -108,6 +116,9 @@ def test_calculate_total_new_bookings_by_country(mock_sqlite_conn):
 
 @patch("airflow.providers.sqlite.hooks.sqlite.SqliteHook.get_conn")
 def test_print_data(mock_sqlite_conn):
+    """
+    Test the print_data task
+    """
     # Mock SQLite connection and query results
     mock_conn = MagicMock()
     mock_sqlite_conn.return_value = mock_conn

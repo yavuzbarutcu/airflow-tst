@@ -21,6 +21,9 @@ TESTS_TMP_DIR = os.path.join(TESTS_BASE_DIR, "tmp/")
 
 @pytest.fixture
 def setup_csv_file():
+    """
+    Create a temporary CSV file for testing
+    """
     print("TEST_TMP_DIR:", TESTS_TMP_DIR)
     csv_path = f"{TESTS_DATA_DIR}transactions_{date_str}.csv"
     data = {
@@ -34,6 +37,9 @@ def setup_csv_file():
     os.remove(csv_path)
 
 def test_source_data(setup_csv_file):
+    """
+    Test the source_data task
+    """
     csv_path = setup_csv_file
     avro_path = f"{TESTS_TMP_DIR}transactions_{date_str}.avro"
 
@@ -49,8 +55,29 @@ def test_source_data(setup_csv_file):
         assert os.path.exists(result['file_path'])
         os.remove(avro_path)
 
+def test_source_data_missing_source_cvs():
+    """
+    Test the source_data task with missing source CSV file
+    """
+    
+    date_str = "1900-01-01"
+
+    with patch("dags.task_2_stream.BASE_DIR", TESTS_BASE_DIR):
+        task = task_2_stream().get_task("source_data")
+        ti = MagicMock(spec=TaskInstance)
+        context = {
+            'logical_date': pd.Timestamp(date_str),
+            'ti': ti
+        }
+        
+        with pytest.raises(ValueError):
+            task.execute(context=context)
+        
 
 def test_process_data(setup_csv_file):
+    """
+    Test the process_data task
+    """
     csv_path = setup_csv_file
     avro_path = f"{TESTS_TMP_DIR}transactions_{date_str}.avro"
     
@@ -74,6 +101,9 @@ def test_process_data(setup_csv_file):
 
 
 def test_process_data_not_enough_data(setup_csv_file):
+    """
+    Test the process_data task with insufficient data
+    """
     csv_path = setup_csv_file
     avro_path = f"{TESTS_TMP_DIR}transactions_{date_str}.avro"
     
