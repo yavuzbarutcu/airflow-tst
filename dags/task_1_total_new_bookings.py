@@ -12,12 +12,11 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_sqlite_conn():
-    try: 
-        hook = SqliteHook(sqlite_conn_id='sqlite_default')
-        return hook.get_conn()
-    except Exception as e:
-        print(f"Error connecting to SQLite: {e}")
-        return None
+    """
+    Get SQLite connection
+    """
+    return SqliteHook(sqlite_conn_id='sqlite_default').get_conn()
+
 
 @dag(
     schedule="@daily",
@@ -38,16 +37,14 @@ def task_1_total_new_bookings() -> DAG:
 
         """
         print(f"Ingesting CSV: {csv_path} into table: {table_name}")
-        conn = None
-        try:
+        if os.path.exists(csv_path):
             conn = get_sqlite_conn()
             df = pd.read_csv(csv_path)
             df.to_sql(table_name, conn, if_exists='replace', index=False)
-        except Exception as e:
-            print(f"Error ingesting CSV: {e}")
-        finally:
-            if conn:
-                conn.close()
+            conn.close()
+        else:
+            print(f"CSV file not found: {csv_path}")
+            raise ValueError(f"CSV file not found: {csv_path}")
     @task
     def calculate_total_new_bookings_by_country() -> Dict[str, any]:
         """
@@ -59,34 +56,27 @@ def task_1_total_new_bookings() -> DAG:
 
         :return: Dict of saved table metadata
         """
-        conn = None
-        try:
-            conn = get_sqlite_conn()
-            query = """
-            SELECT 
-                UPPER(COALESCE(p.country_code, 'OTHER')) as country,
-                COUNT(b.id) as total_bookings
-            FROM 
-                passenger p
-            JOIN 
-                booking b
-            ON 
-                p.id = b.id_passenger
-            WHERE 
-                p.date_registered >= '2021-01-01 00:00:00'
-            GROUP BY 
-                country
-            """
-            result_df = pd.read_sql_query(query, conn)
-            result_df.to_sql('total_new_booking', conn, if_exists='replace', index=False)
-            conn.close()
-            return {"table_name": "total_new_booking", "row_count": len(result_df)}
-        except Exception as e:
-            print(f"Error calculating total new bookings: {e}")
-            return None
-        finally:
-            if conn:
-                conn.close()
+        
+        conn = get_sqlite_conn()
+        query = """
+        SELECT 
+            UPPER(COALESCE(p.country_code, 'OTHER')) as country,
+            COUNT(b.id) as total_bookings
+        FROM 
+            passenger p
+        JOIN 
+            booking b
+        ON 
+            p.id = b.id_passenger
+        WHERE 
+            p.date_registered >= '2021-01-01 00:00:00'
+        GROUP BY 
+            country
+        """
+        result_df = pd.read_sql_query(query, conn)
+        result_df.to_sql('total_new_booking', conn, if_exists='replace', index=False)
+        conn.close()
+        return {"table_name": "total_new_booking", "row_count": len(result_df)}
 
     @task
     def print_data(table: Dict[str, any]) -> None:
@@ -96,18 +86,11 @@ def task_1_total_new_bookings() -> DAG:
         :param table: Dict of table metadata
         :returns: None
         """
-        conn = None
-        try:
-            conn = get_sqlite_conn()
-            query = f"SELECT * FROM {table['table_name']} ORDER BY 1"
-            df = pd.read_sql_query(query, conn)
-            conn.close()
-            print(df)
-        except Exception as e:
-            print(f"Error printing data: {e}")
-        finally:
-            if conn:
-                conn.close()
+        conn = get_sqlite_conn()
+        query = f"SELECT * FROM {table['table_name']} ORDER BY 1"
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+        print(df)
 
     task_ingest_passenger = ingest_csv_as_table(os.path.join(BASE_DIR, "data/passenger.csv"), "passenger")
     task_ingest_booking = ingest_csv_as_table(os.path.join(BASE_DIR, "data/booking.csv"), "booking")

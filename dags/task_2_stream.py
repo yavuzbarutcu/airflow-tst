@@ -29,7 +29,7 @@ schema = {
     description="Reading data from a CSV file, processing the data and storing it",
 )
 def task_2_stream() -> DAG:
-    """DAG that streams record from an artifical API and stores them in a DB"""
+    """DAG that streams record from an artifical API and stores them in an Avro file"""
 
     @task
     def source_data(**op_kwargs) -> Dict[str, any]:
@@ -38,6 +38,7 @@ def task_2_stream() -> DAG:
         date_str = op_kwargs['logical_date'].strftime('%Y-%m-%d')
         print(f"Processing data for date: {date_str}")
 
+        # Create tmp directory if it doesn't exist to store the avro files
         TMP = os.path.join(BASE_DIR, "tmp/")
         if not os.path.exists(TMP):
             os.makedirs(os.path.dirname(TMP), exist_ok=True)
@@ -45,21 +46,18 @@ def task_2_stream() -> DAG:
         csv_path = os.path.join(BASE_DIR, f"data/transactions_{date_str}.csv")
         avro_path = os.path.join(BASE_DIR, f"tmp/transactions_{date_str}.avro")
 
-        # if there is no file, create an empty one
+        # if there is no file, raise an error
         if not os.path.exists(csv_path):
-            print(f"CSV file not found: {csv_path}. Creating an empty CSV file.")
-            df_empty = pd.DataFrame(columns=["key", "value"])
-            df_empty.to_csv(csv_path, index=False, header=False)
-            # raise ValueError(f"CSV file not found: {csv_path}")
+            raise ValueError(f"CSV file not found: {csv_path}")
         
         # Read the CSV file without headers
         df = pd.read_csv(csv_path, header=None, names=["key", "value"])
         records = df.to_dict(orient="records")
         
+        # Write the records to Avro file
         with open(avro_path, "wb") as out:
             writer(out, parse_schema(schema), records)
             
-        
         return {"file_path": avro_path}
 
     @task
@@ -75,14 +73,11 @@ def task_2_stream() -> DAG:
             records = [record for record in reader(f)]
 
         df = pd.DataFrame(records)
-        if df.empty:
+        if df.empty or len(df) < 3:
             raise ValueError("Not enough data to determine the 3rd largest result")
         
         grouped = df.groupby("key").sum().reset_index()
         sorted_df = grouped.sort_values(by="value", ascending=False)
-
-        if len(sorted_df) < 3:
-            raise ValueError("Not enough data to determine the 3rd largest result")
 
         third_largest = sorted_df.iloc[2]
         third_largest_key_value = {"key": third_largest["key"], "value": third_largest["value"]}
