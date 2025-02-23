@@ -9,10 +9,10 @@ import pandas as pd
 import os
 
 
-# Define the absolute path for the SQLite database file
+# Define the absolute path for the file directories
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Define the Avro schema
+# Avro schema
 schema = {
     "type": "record",
     "name": "Transaction",
@@ -29,11 +29,24 @@ schema = {
     description="Reading data from a CSV file, processing the data and storing it",
 )
 def task_2_stream() -> DAG:
-    """DAG that streams record from an artifical API and stores them in an Avro file"""
+    """
+    DAG that streams record from an artifical API and stores them in an Avro file
+    
+        Assuming these rulese below:
+        - DateStamp is extracted from the logical_date
+        - The csv file must be present for the given date. Otherwise raise an error
+        - Job can be triggered multiple times for the same date
+        - Processed source data is not moved to another location or deleted
+        - The Avro file is stored in the dags/tmp directory
+        - The Avro file is not deleted after processing
+        - process_data task receives the temp avro file path from the source_data task
+    """
 
     @task
     def source_data(**op_kwargs) -> Dict[str, any]:
-        """Read file based on DS from list of transactions files convert to binary format and store in tmp file"""
+        """
+        Read file based on DS from list of transactions files convert to binary format and store in tmp file
+        """
 
         date_str = op_kwargs['logical_date'].strftime('%Y-%m-%d')
         print(f"Processing data for date: {date_str}")
@@ -41,12 +54,12 @@ def task_2_stream() -> DAG:
         # Create tmp directory if it doesn't exist to store the avro files
         TMP = os.path.join(BASE_DIR, "tmp/")
         if not os.path.exists(TMP):
-            os.makedirs(os.path.dirname(TMP), exist_ok=True)
+            os.makedirs(TMP, exist_ok=True)
 
         csv_path = os.path.join(BASE_DIR, f"data/transactions_{date_str}.csv")
         avro_path = os.path.join(BASE_DIR, f"tmp/transactions_{date_str}.avro")
 
-        # if there is no file, raise an error
+        # if there is no file, raise an error. Assuming the file must be present
         if not os.path.exists(csv_path):
             raise ValueError(f"CSV file not found: {csv_path}")
         
@@ -67,6 +80,7 @@ def task_2_stream() -> DAG:
 
         return: 3rd largest result
         """
+        # Read the Avro file and convert it to a DataFrame
         avro_path = table['file_path']
 
         with open(avro_path, "rb") as f:
@@ -76,11 +90,15 @@ def task_2_stream() -> DAG:
         if df.empty or len(df) < 3:
             raise ValueError("Not enough data to determine the 3rd largest result")
         
+        # Group by key and sum the values
         grouped = df.groupby("key").sum().reset_index()
         sorted_df = grouped.sort_values(by="value", ascending=False)
 
+        # Get the 3rd largest result
         third_largest = sorted_df.iloc[2]
         third_largest_key_value = {"key": third_largest["key"], "value": third_largest["value"]}
+
+        # Print and return the result as a dictionary
         print(third_largest_key_value)
         return third_largest_key_value
 

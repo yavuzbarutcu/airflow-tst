@@ -37,6 +37,8 @@ def task_1_total_new_bookings() -> DAG:
 
         """
         print(f"Ingesting CSV: {csv_path} into table: {table_name}")
+
+        # Check if the file exists
         if os.path.exists(csv_path):
             conn = get_sqlite_conn()
             df = pd.read_csv(csv_path)
@@ -56,8 +58,9 @@ def task_1_total_new_bookings() -> DAG:
 
         :return: Dict of saved table metadata
         """
-        
+
         conn = get_sqlite_conn()
+        # Query to calculate total new bookings by country. Upper case country code and default to 'OTHER'
         query = """
         SELECT 
             UPPER(COALESCE(p.country_code, 'OTHER')) as country,
