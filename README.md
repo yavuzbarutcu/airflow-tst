@@ -42,3 +42,80 @@ To start things of try to run the unit tests.
 make test
 ```
 
+## Solutions
+
+### Initialize .venv
+1. First we need to initialize virtual environment
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install and start standalone airflow webserver. Depending on the python version, dependencies will be installed. Tested with python version 3.11
+```bash
+make init
+```
+
+### Task 1: Process records from CSV file into SQlite
+The first task reads csv files(booking.csv passanger.csv) files and loads them into  SqliteHook is being used to implement first task
+```bash
+make run_task_1
+```
+
+### Task 2: Streaming records daily from file, aggregate and filter
+The second task has 2 steps.
+1. Read csv files for the given date and write into avro file
+2. Read avro file, aggregate rows by key and return 3rd highest result
+
+There are 3 assumptions to consider:
+    1. If there is no source file for the given date, fail the job. The job below therefore will fail
+```bash
+make run_task_2
+```
+
+    2. If there is no enough data to calculate 3rd highest value, fail the job. The job below therefore will fail too
+```bash
+make run_task_3
+```
+
+    3. If csv file exists and enough data in it, job will run successfully. Jobs below will run and return the highest 3rd result for the dates 2022-04-27 and 2022-04-27 respectively.
+```bash
+make run_task_4
+make run_task_5
+```
+
+## Tests
+All tests can be run with the script below
+```bash
+make test
+```
+
+
+### Test: Task 1
+There are 3 tests written for Task 1:
+
+1. **test_ingest_csv_as_table**: This test verifies the functionality of ingesting a CSV file and storing it as a table.
+
+2. **test_calculate_total_new_bookings_by_country**: This test checks the calculation of the total number of new bookings grouped by country.
+
+3. **test_print_data**: This test ensures that the data is printed correctly.
+
+
+### Test: Task 2
+There are 4 test function for the task 2
+
+1. **test_source_data**:
+Purpose: This test function is designed to verify that the source data is correctly loaded and meets the expected format and content.
+Details: It will likely check if the data source file exists, if it can be read without errors, and if the data within it matches the expected structure (e.g., correct columns, data types, etc.).
+
+2. **test_source_data_missing_source_cvs**:
+Purpose: This test function checks the behavior of your program when the source CSV file is missing.
+Details: It will simulate the scenario where the source data file is not present and ensure that your program handles this situation gracefully, possibly by raising an appropriate error or providing a meaningful message to the user.
+
+3. **test_process_data**:
+Purpose: This test function verifies that the data processing logic works correctly.
+Details: It will test the core functionality of your data processing code, ensuring that the input data is transformed as expected. This might include checking calculations, data transformations, aggregations, or any other processing steps your program performs.
+
+4. **test_process_data_not_enough_data**:
+Purpose: This test function ensures that your program can handle cases where there is insufficient data for processing.
+Details: It will simulate a scenario where the input data is incomplete or too sparse to be processed correctly. The test will check if your program can detect this condition and respond appropriately, such as by raising an error or skipping the processing step.

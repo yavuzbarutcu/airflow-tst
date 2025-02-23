@@ -87,11 +87,16 @@ def task_2_stream() -> DAG:
             records = [record for record in reader(f)]
 
         df = pd.DataFrame(records)
-        if df.empty or len(df) < 3:
+        if df.empty:
             raise ValueError("Not enough data to determine the 3rd largest result")
         
         # Group by key and sum the values
         grouped = df.groupby("key").sum().reset_index()
+
+        # check if there are at least 3 records after grouping
+        if len(grouped) < 3:
+            raise ValueError("Not enough data to determine the 3rd largest result")
+        # Sort the DataFrame by value in descending order
         sorted_df = grouped.sort_values(by="value", ascending=False)
 
         # Get the 3rd largest result
