@@ -68,17 +68,20 @@ The second task has 2 steps.
 2. Read avro file, aggregate rows by key and return 3rd highest result
 
 There are 3 assumptions to consider:
-    1. If there is no source file for the given date, fail the job. The job below therefore will fail
+1. If there is no source file for the given date, fail the job. The job below therefore will fail
+
 ```bash
 make run_task_2
 ```
 
-    2. If there is no enough data to calculate 3rd highest value, fail the job. The job below therefore will fail too
+2. If there is no enough data to calculate 3rd highest value, fail the job. The job below therefore will fail too
+
 ```bash
 make run_task_3
 ```
 
-    3. If csv file exists and enough data in it, job will run successfully. Jobs below will run and return the highest 3rd result for the dates 2022-04-27 and 2022-04-27 respectively.
+3. If csv file exists and enough data in it, job will run successfully. Jobs below will run and return the highest 3rd result for the dates 2022-04-27 and 2022-04-27 respectively.
+
 ```bash
 make run_task_4
 make run_task_5
@@ -86,6 +89,7 @@ make run_task_5
 
 ## Tests
 All tests can be run with the script below
+
 ```bash
 make test
 ```
