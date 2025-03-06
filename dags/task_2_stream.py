@@ -57,7 +57,9 @@ def task_2_stream() -> DAG:
             os.makedirs(TMP, exist_ok=True)
 
         csv_path = os.path.join(BASE_DIR, f"data/transactions_{date_str}.csv")
-        avro_path = os.path.join(BASE_DIR, f"tmp/transactions_{date_str}.avro")
+        # create unique identifier uid for the avro file
+        uid = pendulum.now().int_timestamp
+        avro_path = os.path.join(BASE_DIR, f"tmp/transactions_{date_str}_{uid}.avro")
 
         # if there is no file, raise an error. Assuming the file must be present
         if not os.path.exists(csv_path):
